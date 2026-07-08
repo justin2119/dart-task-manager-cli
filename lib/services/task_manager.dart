@@ -2,34 +2,42 @@ import 'dart:convert';
 import 'dart:io';
 import '../models/task.dart';
 import '../exceptions/task_exceptions.dart';
+import 'repository.dart';
 
-abstract class Repository<T> {
-  Future<void> save(List<T> items);
-  Future<List<T>> load();
-}
-
-class TaskManager {
-  final String storagePath;
+/// Implementation of a [Repository] for managing Tasks.
+class TaskManager implements Repository<Task> {
+  final String _storagePath;
   List<Task> _tasks = [];
 
-  TaskManager(this.storagePath);
+  /// Creates a TaskManager with a specific file path.
+  TaskManager(this._storagePath);
 
-  List<Task> get allTasks => List.unmodifiable(_tasks);
-
-  void addTask(Task task) {
-    _tasks.add(task);
+  @override
+  void add(Task item) {
+    _tasks.add(item);
   }
 
-  void completeTask(String id) {
-    final task = _tasks.firstWhere((t) => t.id == id, orElse: () => throw TaskNotFoundException(id));
-    task.isCompleted = true;
-  }
-
-  void deleteTask(String id) {
-    if (!_tasks.any((t) => t.id == id)) throw TaskNotFoundException(id);
+  @override
+  void delete(String id) {
+    if (!_tasks.any((t) => t.id == id)) {
+      throw TaskNotFoundException(id);
+    }
     _tasks.removeWhere((t) => t.id == id);
   }
 
+  @override
+  List<Task> getAll() => List.unmodifiable(_tasks);
+
+  /// Marks a task as finished.
+  void completeTask(String id) {
+    final task = _tasks.firstWhere(
+      (t) => t.id == id,
+      orElse: () => throw TaskNotFoundException(id),
+    );
+    task.isCompleted = true;
+  }
+
+  /// Sorts tasks by priority or date.
   void sortTasks({bool byPriority = true}) {
     if (byPriority) {
       _tasks.sort((a, b) => b.priority.index.compareTo(a.priority.index));
@@ -38,18 +46,34 @@ class TaskManager {
     }
   }
 
-  Future<void> saveTasks() async {
-    final file = File(storagePath);
-    final jsonString = jsonEncode(_tasks.map((t) => t.toJson()).toList());
-    await file.writeAsString(jsonString);
+  @override
+  Future<void> save() async {
+    try {
+      final file = File(_storagePath);
+      final jsonString = jsonEncode(_tasks.map((t) => t.toJson()).toList());
+      await file.writeAsString(jsonString);
+    } catch (e) {
+      throw StorageException('Failed to save tasks: $e');
+    }
   }
 
-  Future<void> loadTasks() async {
-    final file = File(storagePath);
-    if (await file.exists()) {
-      final jsonString = await file.readAsString();
-      final List<dynamic> jsonData = jsonDecode(jsonString);
-      _tasks = jsonData.map((item) => Task.fromJson(item)).toList();
+  @override
+  Future<void> load() async {
+    try {
+      final file = File(_storagePath);
+      if (await file.exists()) {
+        final jsonString = await file.readAsString();
+        final List<dynamic> jsonData = jsonDecode(jsonString) as List<dynamic>;
+        _tasks = jsonData.map((item) {
+          final map = item as Map<String, dynamic>;
+          if (map['type'] == 'urgent') {
+            return UrgentTask.fromUrgentJson(map);
+          }
+          return Task.fromJson(map);
+        }).toList();
+      }
+    } catch (e) {
+      throw StorageException('Failed to load tasks: $e');
     }
   }
 }
