@@ -1,9 +1,6 @@
-import 'dart:io';
-import '../lib/models/task.dart';
 import '../lib/services/task_manager.dart';
-import '../lib/exceptions/task_exceptions.dart';
 
-void main(List<String> arguments) async {
+Future<void> main(List<String> arguments) async {
   final manager = TaskManager('tasks.json');
   await manager.loadTasks();
 
