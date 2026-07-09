@@ -63,12 +63,18 @@ class UrgentTask extends Task {
 
   /// Creates an [UrgentTask].
   UrgentTask({
-    required super.id,
-    required super.title,
-    required super.dueDate,
+    required String id,
+    required String title,
+    required DateTime dueDate,
     required this.urgencyNote,
-    super.isCompleted,
-  }) : super(priority: Priority.urgent);
+    bool isCompleted = false,
+  }) : super(
+          id: id,
+          title: title,
+          dueDate: dueDate,
+          priority: Priority.urgent,
+          isCompleted: isCompleted,
+        );
 
   @override
   Map<String, dynamic> toJson() => super.toJson()..addAll({
