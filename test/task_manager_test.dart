@@ -31,7 +31,7 @@ void main() {
 
     test('Deleting a task', () {
       manager.addTask(Task(
-          id: '1',
+          id: '2',
           title: 'Test Task',
           priority: Priority.Low,
           dueDate: DateTime.now()));
