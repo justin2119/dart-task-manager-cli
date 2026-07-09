@@ -26,15 +26,17 @@ class TaskManager implements Repository<Task> {
   }
 
   @override
-  List<Task> getAll() => List.unmodifiable(_tasks);
+  List<Task> getAll() {
+    return List<Task>.from(_tasks);
+  }
 
   /// Marks a task as finished.
   void completeTask(String id) {
-    final task = _tasks.firstWhere(
-      (t) => t.id == id,
-      orElse: () => throw TaskNotFoundException(id),
-    );
-    task.isCompleted = true;
+    final index = _tasks.indexWhere((t) => t.id == id);
+    if (index == -1) {
+      throw TaskNotFoundException(id);
+    }
+    _tasks[index].isCompleted = true;
   }
 
   /// Sorts tasks by priority or date.
